@@ -11,11 +11,11 @@ public class InputSettings : ScriptableObject
     [Range(1f, 50f)]
     public float launchForce = 10f;
     
-    [Range(1f, 100f)]
-    public float maxLaunchForce = 20f;
+    [Range(1f, 500f)]
+    public float maxLaunchForce = 11f;
     
-    [Range(1f, 10f)]
-    public float maxAimDistance = 5f;
+    [Range(1f, 20f)]
+    public float maxAimDistance = 10f;
     
     [Header("Visual Settings")]
     public Color aimLineColor = Color.red;

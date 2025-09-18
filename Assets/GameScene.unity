@@ -152,10 +152,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e5a89a9bd374441ea21b1939193869b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  physicsSettings: {fileID: 11400000, guid: cb420196cc7c34f94ad06c0a1e3e1199, type: 3}
-  inputSettings: {fileID: 11400000, guid: 1968b4adc2e674086a27fd6315f3f903, type: 3}
+  physicsSettings: {fileID: 11400000, guid: cb420196cc7c34f94ad06c0a1e3e1199, type: 2}
+  inputSettings: {fileID: 11400000, guid: 1968b4adc2e674086a27fd6315f3f903, type: 2}
   healthSettings: {fileID: 0}
-  gameplaySettings: {fileID: 11400000, guid: 5fb7c74af35c646afbef954cd59fa531, type: 3}
+  gameplaySettings: {fileID: 11400000, guid: 5fb7c74af35c646afbef954cd59fa531, type: 2}
 --- !u!4 &149958397
 Transform:
   m_ObjectHideFlags: 0

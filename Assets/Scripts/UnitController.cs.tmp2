@@ -3,8 +3,21 @@ using UnityEngine;
 public class UnitController : MonoBehaviour
 {
     [Header("Settings")]
-    public PhysicsSettings physicsSettings;
-    public InputSettings inputSettings;
+    [SerializeField] private bool useGlobalSettings = true;
+    
+    [Header("Team Settings")]
+    public bool isPlayerUnit = true; // true = свой юнит, false = чужой
+    
+    // Вспомогательные методы для получения настроек
+    private PhysicsSettings GetPhysicsSettings()
+    {
+        return useGlobalSettings ? GameSettings.Physics : null;
+    }
+    
+    private InputSettings GetInputSettings()
+    {
+        return useGlobalSettings ? GameSettings.Input : null;
+    }
     
     [Header("Visual Settings")]
     public LineRenderer aimLine;
@@ -27,12 +40,13 @@ public class UnitController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         
-        // Применяем настройки физики
-        if (physicsSettings != null)
+        // Применяем настройки физики из глобальных настроек
+        var physics = GetPhysicsSettings();
+        if (physics != null)
         {
-            rb.mass = physicsSettings.unitMass;
-            rb.drag = physicsSettings.unitDrag;
-            rb.angularDrag = physicsSettings.unitAngularDrag;
+            rb.mass = physics.unitMass;
+            rb.drag = physics.unitDrag;
+            rb.angularDrag = physics.unitAngularDrag;
         }
         
         // Устанавливаем начальные ограничения - только вращение по Y разрешено
@@ -48,15 +62,23 @@ public class UnitController : MonoBehaviour
             mainCamera = FindObjectOfType<Camera>();
         }
         
-        // Настройка линии прицеливания
-        if (aimLine == null)
+        // Настройка линии прицеливания только для своих юнитов
+        if (isPlayerUnit)
         {
-            GameObject lineObj = new GameObject("AimLine");
-            lineObj.transform.SetParent(transform);
-            aimLine = lineObj.AddComponent<LineRenderer>();
+            if (aimLine == null)
+            {
+                GameObject lineObj = new GameObject("AimLine");
+                lineObj.transform.SetParent(transform);
+                aimLine = lineObj.AddComponent<LineRenderer>();
+            }
+            SetupAimLine();
+            
+            // Добавляем компонент атаки для своих юнитов
+            if (GetComponent<AttackOnCollision>() == null)
+            {
+                gameObject.AddComponent<AttackOnCollision>();
+            }
         }
-        
-        SetupAimLine();
     }
     
     void Update()
@@ -73,6 +95,9 @@ public class UnitController : MonoBehaviour
     
     void HandleTouchInput()
     {
+        // Чужими юнитами нельзя управлять
+        if (!isPlayerUnit) return;
+        
         if (Input.touchCount > 0)
         {
             Touch touch = Input.GetTouch(0);
@@ -118,7 +143,8 @@ public class UnitController : MonoBehaviour
     bool IsTouchOnUnit(Vector3 worldPosition)
     {
         float distance = Vector3.Distance(transform.position, worldPosition);
-        float radius = inputSettings != null ? inputSettings.touchRadius : 2f;
+        var input = GetInputSettings();
+        float radius = input != null ? input.touchRadius : 2f;
         return distance <= radius;
     }
     
@@ -155,7 +181,8 @@ public class UnitController : MonoBehaviour
         {
             aimLine.SetPosition(0, transform.position);
             // Показываем направление полета (aimDirection уже инвертирован)
-            float aimDistance = inputSettings != null ? inputSettings.maxAimDistance : 5f;
+            var input = GetInputSettings();
+            float aimDistance = input != null ? input.maxAimDistance : 5f;
             aimLine.SetPosition(1, transform.position + aimDirection * aimDistance);
         }
     }
@@ -202,9 +229,10 @@ public class UnitController : MonoBehaviour
         }
         
         // Вычисляем силу запуска на основе расстояния прицеливания
-        float maxAimDist = inputSettings != null ? inputSettings.maxAimDistance : 5f;
-        float launchF = inputSettings != null ? inputSettings.launchForce : 10f;
-        float maxLaunchF = inputSettings != null ? inputSettings.maxLaunchForce : 20f;
+        var input = GetInputSettings();
+        float maxAimDist = input != null ? input.maxAimDistance : 5f;
+        float launchF = input != null ? input.launchForce : 10f;
+        float maxLaunchF = input != null ? input.maxLaunchForce : 20f;
         
         float aimDistance = Vector3.Distance(touchStartPosition, transform.position + aimDirection * maxAimDist);
         float forceMultiplier = Mathf.Clamp01(aimDistance / maxAimDist);
@@ -248,8 +276,9 @@ public class UnitController : MonoBehaviour
         if (aimLine != null)
         {
             aimLine.material = new Material(Shader.Find("Sprites/Default"));
-            aimLine.material.color = inputSettings != null ? inputSettings.aimLineColor : Color.red;
-            float lineWidth = inputSettings != null ? inputSettings.aimLineWidth : 0.1f;
+            var input = GetInputSettings();
+            aimLine.material.color = input != null ? input.aimLineColor : Color.red;
+            float lineWidth = input != null ? input.aimLineWidth : 0.1f;
             aimLine.startWidth = lineWidth;
             aimLine.endWidth = lineWidth;
             aimLine.positionCount = 2;
@@ -263,7 +292,8 @@ public class UnitController : MonoBehaviour
         Vector3 rayStart = transform.position;
         Vector3 rayDirection = Vector3.down;
         
-        float checkDistance = physicsSettings != null ? physicsSettings.groundCheckDistance : 1.5f;
+        var physics = GetPhysicsSettings();
+        float checkDistance = physics != null ? physics.groundCheckDistance : 1.5f;
         bool wasOnGround = isOnGround;
         isOnGround = Physics.Raycast(rayStart, rayDirection, checkDistance, groundLayer);
         
@@ -279,7 +309,7 @@ public class UnitController : MonoBehaviour
         // Если упали с платформы, разрешаем свободное вращение
         if (wasOnGround && !isOnGround)
         {
-            if (physicsSettings == null || physicsSettings.allowRotationInAir)
+            if (physics != null && physics.allowRotationInAir)
             {
                 rb.constraints = RigidbodyConstraints.None;
                 Debug.Log("Unit fell off platform - free rotation enabled");
@@ -288,7 +318,7 @@ public class UnitController : MonoBehaviour
         // Если вернулись на платформу, замораживаем вращение по X и Z
         else if (!wasOnGround && isOnGround)
         {
-            if (physicsSettings == null || physicsSettings.freezeRotationOnGround)
+            if (physics != null && physics.freezeRotationOnGround)
             {
                 rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
                 Debug.Log("Unit back on platform - X and Z rotation frozen");
@@ -301,7 +331,8 @@ public class UnitController : MonoBehaviour
         if (isOnGround)
         {
             // На земле - скольжение с сопротивлением
-            float slideDrag = physicsSettings != null ? physicsSettings.slidingDrag : 1f;
+            var physics = GetPhysicsSettings();
+            float slideDrag = physics != null ? physics.slidingDrag : 1f;
             rb.drag = slideDrag;
             rb.angularDrag = slideDrag;
             
@@ -316,7 +347,8 @@ public class UnitController : MonoBehaviour
         else
         {
             // В воздухе - свободное падение
-            float fallDrag = physicsSettings != null ? physicsSettings.fallingDrag : 0.1f;
+            var physics = GetPhysicsSettings();
+            float fallDrag = physics != null ? physics.fallingDrag : 0.1f;
             rb.drag = fallDrag;
             rb.angularDrag = fallDrag;
         }
@@ -326,12 +358,30 @@ public class UnitController : MonoBehaviour
     {
         // Визуализация радиуса касания в редакторе
         Gizmos.color = Color.yellow;
-        float radius = inputSettings != null ? inputSettings.touchRadius : 2f;
+        var input = GetInputSettings();
+        float radius = input != null ? input.touchRadius : 2f;
         Gizmos.DrawWireSphere(transform.position, radius);
         
         // Визуализация проверки земли
         Gizmos.color = isOnGround ? Color.green : Color.red;
-        float checkDistance = physicsSettings != null ? physicsSettings.groundCheckDistance : 1.5f;
+        var physics = GetPhysicsSettings();
+        float checkDistance = physics != null ? physics.groundCheckDistance : 1.5f;
         Gizmos.DrawLine(transform.position, transform.position + Vector3.down * checkDistance);
+    }
+    
+    // Методы для работы с командой
+    public bool IsPlayerUnit()
+    {
+        return isPlayerUnit;
+    }
+    
+    public bool IsEnemyUnit()
+    {
+        return !isPlayerUnit;
+    }
+    
+    public void SetTeam(bool isPlayer)
+    {
+        isPlayerUnit = isPlayer;
     }
 }

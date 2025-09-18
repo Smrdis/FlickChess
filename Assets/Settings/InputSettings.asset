@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ba29019f4b5c4a29a8beb967dafd336, type: 3}
   m_Name: InputSettings
   m_EditorClassIdentifier: 
-  touchRadius: 2
+  touchRadius: 1.5
   launchForce: 10
-  maxLaunchForce: 20
-  maxAimDistance: 5
+  maxLaunchForce: 100
+  maxAimDistance: 6
   aimLineColor: {r: 1, g: 0, b: 0, a: 1}
   aimLineWidth: 0.1

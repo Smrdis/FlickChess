@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 public class GameManager : MonoBehaviour
 {
     [Header("Settings")]
-    public GameplaySettings gameplaySettings;
+    [SerializeField] private bool useGlobalSettings = true;
     
     void Update()
     {
@@ -14,7 +14,7 @@ public class GameManager : MonoBehaviour
     void HandleInput()
     {
         // Перезагрузка сцены по настроенной клавише
-        KeyCode reloadKey = gameplaySettings != null ? gameplaySettings.reloadKey : KeyCode.R;
+        KeyCode reloadKey = useGlobalSettings && GameSettings.Gameplay != null ? GameSettings.Gameplay.reloadKey : KeyCode.R;
         if (Input.GetKeyDown(reloadKey))
         {
             ReloadScene();

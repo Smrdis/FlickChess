@@ -23,15 +23,6 @@ public class PhysicsSettings : ScriptableObject
     [Range(0f, 1f)]
     public float fallingDrag = 0.1f;
     
-    [Header("Bounce Settings")]
-    [Range(0f, 10f)]
-    public float bounceForce = 5f;
-    
-    [Range(0f, 5f)]
-    public float minBounceVelocity = 2f;
-    
-    [Range(0f, 1f)]
-    public float bounceRandomness = 0.3f;
     
     [Header("Constraints")]
     public bool freezeRotationOnGround = true;
